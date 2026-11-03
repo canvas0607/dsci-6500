@@ -213,6 +213,20 @@ API Gateway 的新客户免费调用、S3 新用户优惠、AWS 注册赠金等�
 - [CloudFront FAQ：免费额度及 AWS 源站传输][cloudfront-faq]。
 - 安全配置：[IAM 与费用说明][iam-guide]、[Lambda 执行角色][lambda-iam]、[VPC 说明][vpc-guide]、[Lambda VPC 配置][lambda-vpc]、[VPC 定价][vpc-pricing]。
 
+## 六、反思
+
+### 1. 可靠性
+
+本方案的可靠性主要依靠 AWS 托管的 Serverless 服务。AWS 负责维护底层运行基础设施，Lambda 提供跨可用区运行能力，减少自行维护服务器带来的故障风险。SQS 可以暂存待处理的异步任务，CloudWatch 用于监控运行情况、发现异常。不过，Serverless 并不意味着业务不会发生故障，仍需合理配置错误处理与监控。[Lambda 可靠性说明][lambda-resilience]、[SQS 服务说明][sqs-overview]
+
+### 2. 可扩展性
+
+架构中的 SQS 将异步任务的提交与处理解耦。未来增加更多任务类型时，可以新增 SQS 队列和对应的消费 Lambda，由业务代码将不同类型的任务发送到相应队列，实现任务分发。不同任务可以独立调整处理能力，减少新增功能对现有业务流程的影响。[SQS 服务说明][sqs-overview]
+
+### 3. 安全性
+
+安全性主要通过 AWS IAM 的权限管理来支持。除现有的 Lambda 执行角色外，后续公司成员需要使用不同模块时，可以按职责设置独立的 IAM 角色，并授权相应成员切换使用，只授予其工作所需的 AWS 资源权限，避免所有成员共用管理员权限。成员使用的角色与 Lambda 执行角色分开管理。这里的 IAM 权限主要针对 AWS 资源的管理和访问，应用内部的用户功能权限仍需由应用自身实现鉴权。[IAM 角色使用说明][iam-switch-role]
+
 [aws-regions]: https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions.html
 [ses-regions]: https://docs.aws.amazon.com/general/latest/gr/ses.html
 [cloudfront-acm]: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-and-https-requirements.html
@@ -238,3 +252,6 @@ API Gateway 的新客户免费调用、S3 新用户优惠、AWS 注册赠金等�
 [vpc-guide]: https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html
 [lambda-vpc]: https://docs.aws.amazon.com/lambda/latest/dg/configuration-vpc.html
 [vpc-pricing]: https://aws.amazon.com/vpc/pricing/
+[lambda-resilience]: https://docs.aws.amazon.com/lambda/latest/dg/security-resilience.html
+[sqs-overview]: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/welcome.html
+[iam-switch-role]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-console.html
