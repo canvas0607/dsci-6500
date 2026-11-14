@@ -178,62 +178,7 @@ flowchart TB
 
 图中的实线表示业务请求或数据流，虚线表示 DNS 解析、证书配置、监控数据或安全控制关系；响应路径未逐一画出。
 
-## 四、各服务费用
-
-### 1. 计费口径
-
-以下价格于 **2026 年 11 月 3 日**核对，金额均为**美元（USD），不含税**。全部区域性业务服务采用新加坡 `ap-southeast-1`。CloudFront 采用按量计费（Pay-as-you-go），假设静态请求由新加坡所在的亚洲边缘计费组提供服务，不混用固定月费套餐。
-
-表中为未抵扣免费额度的基础费率。多数服务没有固定实例月费，但存储、日志、出网及已创建的监控项目仍可能产生费用。CloudFront 的流量单价取决于实际提供服务的边缘位置，而非 S3 源站所在区域。
-
-| 服务／计费项目 | 本方案采用的按量费率 | 固定费用及说明 |
-| --- | --- | --- |
-| Cloudflare DNS、基础代理、Universal SSL | Free 计划为 $0/月 | 不购买付费套餐、Workers 或其他附加服务。[Cloudflare 计划][cloudflare-pricing] |
-| ACM 公有非导出型证书 | $0 | 用于 CloudFront 和 API Gateway，托管续期；不使用 Private CA 或付费导出型证书。[ACM 定价][acm-pricing] |
-| IAM 执行角色与权限策略 | $0 | 基础 IAM 功能不额外收费；不使用付费的 IAM Access Analyzer 分析功能。[IAM 费用说明][iam-guide] |
-| VPC 网络控制（按需启用） | VPC 本身无额外基础费用；附加网络组件另计 | 当前不启用自建 VPC 关联、NAT Gateway 或接口型 VPC 端点；后续启用时需另核网络组件费用。[VPC 说明][vpc-guide]、[VPC 定价][vpc-pricing] |
-| API Gateway HTTP API | $1.25/100 万次请求，首 3 亿次/月 | 无固定实例月费；大请求按计费大小累加请求单位，公网出网另计。[新加坡价目][price-apigw] |
-| Lambda x86 调用 | $0.20/100 万次调用 | 业务 Lambda 与消费 Lambda 分别累计调用次数。[新加坡价目][price-lambda] |
-| Lambda x86 计算 | $0.0000166667/GB-s，首 60 亿 GB-s/月 | 计算量为配置内存（GB）×计费时长（秒）；不开启预置并发。[新加坡价目][price-lambda] |
-| DynamoDB Standard On-Demand | 写入 $0.71/100 万 WRU；读取 $0.1425/100 万 RRU | 按请求单位而非业务 API 次数计费；项目大小、一致性、事务和索引都会影响用量。[新加坡价目][price-ddb] |
-| DynamoDB Standard 存储 | $0.285/GB月，免费存储额度之外 | 不计额外索引、备份、PITR、全局表等可选功能。[新加坡价目][price-ddb] |
-| SQS Standard | $0.40/100 万次计费请求，首 1,000 亿次/月 | 发送、接收、删除、空轮询均可能计费；每 64 KiB 负载折算一个请求单位。[新加坡价目][price-sqs] |
-| SES 按量发送、共享 IP | $0.10/1,000 个收件人；邮件发送数据按 $0.12/GB 预算 | 采用 à la carte，无固定月费；不购买独享 IP、VDM 或高级计划。新账户需确认未停留在默认 Essentials 计划。[SES 定价][ses-pricing] |
-| S3 Standard 存储 | $0.025/GB月，首 50 TB | 根据实际存储量持续计费。[新加坡价目][price-s3] |
-| S3 PUT、GET | PUT $0.005/1,000 次；GET $0.0004/1,000 次 | CloudFront 命中缓存时无需向 S3 发起本次回源 GET；S3 到 CloudFront 的数据传输不另收出网费。[新加坡价目][price-s3]、[CloudFront FAQ][cloudfront-faq] |
-| CloudFront HTTPS 请求 | $0.012/10,000 次 | 本表采用新加坡所在亚洲边缘计费组；源站区域调整不决定实际边缘计费地点。[按量定价][cloudfront-pricing] |
-| CloudFront 公网出网 | $0.12/GB，0–10 TB 用量阶梯的基础单价 | 全球前 1 TB 免费后，该阶梯剩余用量收费；缓存命中不免除 CDN 对用户的出网用量。[按量定价][cloudfront-pricing] |
-| CloudWatch Logs Standard | 写入 $0.70/GB；归档 $0.03/压缩 GB月 | 写入与存储分别计费。[新加坡价目][price-cloudwatch] |
-| CloudWatch Logs Insights | $0.007/GB 未压缩扫描量 | 查询时间范围、扫描日志量会影响费用。[新加坡价目][price-cloudwatch] |
-| CloudWatch 普通仪表板与标准告警 | $3/仪表板月；$0.10/告警指标月 | 免费额度以外计费；仪表板创建后并非按每次查看收费。[CloudWatch 定价][cloudwatch-pricing] |
-| API Gateway 至 Cloudflare 的公网出网 | $0.12/GB，0–10 TB 用量阶梯的基础单价 | 扣除可用的共享公网出网免费额度后计费；Cloudflare 的免费代理不会免除 AWS 源站出网费用。[新加坡数据传输价目][price-transfer] |
-| Lambda 至 SES 的同区域传输 | $0 | 消费 Lambda 与 SES 均位于新加坡；不计额外的 NAT Gateway、PrivateLink 等未启用网络组件费用。[同区域传输说明][lambda-pricing] |
-
-### 2. 持续免费额度说明
-
-这些额度通常在同一付款账户或组织中共享，不能为每个函数、队列、分发或区域重复抵扣。实际可用额度取决于账户资格及其他项目的使用情况，以 AWS 账户显示为准。
-
-| 服务 | 持续免费额度 | 注意事项 |
-| --- | --- | --- |
-| Lambda | 100 万次调用/月、400,000 GB-s/月 | 业务与消费函数、适用区域、x86 与 Arm 共用额度。[官方定价][lambda-pricing] |
-| DynamoDB Standard | 25 GB 存储/月 | 按区域、按付款账户共享；25 RCU/WCU 的预置容量免费额度不能抵扣 On-Demand 的 RRU/WRU。[官方定价][ddb-pricing] |
-| SQS | 100 万次请求/月 | 跨队列、跨适用区域共享；空轮询也消耗额度。[官方定价][sqs-pricing] |
-| CloudFront 按量模式 | 1 TB 出网/月、1,000 万次 HTTP/HTTPS 请求/月 | 全球边缘位置与各分发合计使用。[官方说明][cloudfront-faq] |
-| CloudWatch Logs | 写入 5 GB/月、归档 5 GB月、Logs Insights 扫描 5 GB/月 | 三类分别计量，均不能按应用或区域重复享用。[官方定价][cloudwatch-pricing] |
-| CloudWatch 仪表板与告警 | 3 个每个不超过 50 个指标的普通仪表板；10 个标准告警指标 | 本方案只使用服务默认指标，普通仪表板和直接引用指标的标准告警。[官方定价][cloudwatch-pricing] |
-| AWS 区域公网出网 | 100 GB/月 | 跨 AWS 服务和区域共享；与 CloudFront 自身的免费出网额度分开计算，不抵扣跨区域传输。[官方说明][transfer-pricing] |
-
-API Gateway 的新客户免费调用、S3 新用户优惠、AWS 注册赠金等属于账户促销，适用资格和期限应在账户中另行确认。
-
-## 五、价格与配置参考
-
-- [AWS 区域代码][aws-regions]、[SES 区域端点列表][ses-regions]、[CloudFront ACM 证书区域要求][cloudfront-acm]。
-- 新加坡区原始价目：[API Gateway][price-apigw]、[Lambda][price-lambda]、[DynamoDB][price-ddb]、[SQS][price-sqs]、[S3][price-s3]、[CloudWatch][price-cloudwatch]、[数据传输][price-transfer]。
-- 官方定价说明：[Cloudflare][cloudflare-pricing]、[ACM][acm-pricing]、[Lambda][lambda-pricing]、[DynamoDB][ddb-pricing]、[SQS][sqs-pricing]、[SES][ses-pricing]、[CloudWatch][cloudwatch-pricing]、[CloudFront 按量模式][cloudfront-pricing]、[区域公网出网][transfer-pricing]。
-- [CloudFront FAQ：免费额度及 AWS 源站传输][cloudfront-faq]。
-- 安全配置：[IAM 与费用说明][iam-guide]、[Lambda 执行角色][lambda-iam]、[VPC 说明][vpc-guide]、[Lambda VPC 配置][lambda-vpc]、[VPC 定价][vpc-pricing]。
-
-## 六、反思
+## 四、反思
 
 ### 1. 可靠性
 
@@ -250,24 +195,7 @@ API Gateway 的新客户免费调用、S3 新用户优惠、AWS 注册赠金等�
 [aws-regions]: https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions.html
 [ses-regions]: https://docs.aws.amazon.com/general/latest/gr/ses.html
 [cloudfront-acm]: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-and-https-requirements.html
-[cloudflare-pricing]: https://www.cloudflare.com/plans/
-[acm-pricing]: https://aws.amazon.com/certificate-manager/pricing/
-[price-apigw]: https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonApiGateway/current/ap-southeast-1/index.json
-[price-lambda]: https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSLambda/current/ap-southeast-1/index.json
-[price-ddb]: https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonDynamoDB/current/ap-southeast-1/index.json
-[price-sqs]: https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSQueueService/current/ap-southeast-1/index.json
-[price-s3]: https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonS3/current/ap-southeast-1/index.json
-[price-cloudwatch]: https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonCloudWatch/current/ap-southeast-1/index.json
-[price-transfer]: https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSDataTransfer/current/ap-southeast-1/index.json
 [lambda-pricing]: https://aws.amazon.com/lambda/pricing/
-[ddb-pricing]: https://aws.amazon.com/dynamodb/pricing/
-[sqs-pricing]: https://aws.amazon.com/sqs/pricing/
-[ses-pricing]: https://aws.amazon.com/ses/pricing/
-[cloudwatch-pricing]: https://aws.amazon.com/cloudwatch/pricing/
-[cloudfront-pricing]: https://aws.amazon.com/cloudfront/pricing/pay-as-you-go/
-[cloudfront-faq]: https://aws.amazon.com/cloudfront/faqs/
-[transfer-pricing]: https://aws.amazon.com/ec2/pricing/on-demand/
-[iam-guide]: https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction.html
 [lambda-iam]: https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html
 [vpc-guide]: https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html
 [lambda-vpc]: https://docs.aws.amazon.com/lambda/latest/dg/configuration-vpc.html
