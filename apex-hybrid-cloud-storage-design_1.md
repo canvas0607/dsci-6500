@@ -25,7 +25,7 @@
 
 架构分三块：本地私有云、AWS 主区域和 AWS 灾备区域，由统一的身份层、备份层和监控层贯穿。
 
-![图 1 混合云存储架构](figure-1-hybrid-cloud-architecture.png)
+![图 1 混合云存储架构](figure-1-hybrid-cloud-architecture_1.png)
 
 **图 1** 混合云存储架构
 
